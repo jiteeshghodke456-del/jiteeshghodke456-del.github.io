@@ -285,15 +285,15 @@ function renderRoadmap() {
   PHASES.forEach((p, i) => {
     const isCurrent = i === STATE.currentPhase;
     const div = document.createElement('div');
-    div.className = `phase-card${isCurrent ? ' current-phase' : ''}${i === 0 ? ' expanded' : ''}`;
+    div.className = `phase-card${isCurrent ? ' current-phase' : ''}`;
     div.innerHTML = `
       <div class="phase-head">
         <span class="phase-badge" style="background:${p.color}22;color:${p.color};border:1px solid ${p.color}44">${p.label}</span>
-        <div class="phase-info"><div class="phase-name">${p.title}${isCurrent ? ' ← You are here' : ''}</div><div class="phase-dur">${p.duration}</div></div>
-        <span class="phase-chevron">▼</span>
+        <div class="phase-name">${p.title}${isCurrent ? ' <span style="font-size:14px;color:var(--accent);font-weight:normal;margin-left:8px">(You are here)</span>' : ''}</div>
+        <div class="phase-dur">${p.duration}</div>
       </div>
       <div class="phase-body">
-        ${p.switchNote ? `<div class="switch-banner">⚡ ${p.switchNote}</div>` : ''}
+        ${p.switchNote ? `<div class="switch-banner" style="margin-bottom:16px">⚡ ${p.switchNote}</div>` : ''}
         <div class="phase-section-label">Core Topics</div>
         <div class="chip-wrap">${p.coreTopics.map(t => { const link = p.topicLinks?.find(l => l.topic === t); return link ? `<a href="${link.url}" target="_blank" class="chip core linked">${t} ↗</a>` : `<span class="chip core">${t}</span>`; }).join('')}</div>
         <div class="phase-section-label">Supporting</div>
@@ -310,10 +310,6 @@ function renderRoadmap() {
         <div class="phase-section-label">Resources</div>
         <div class="resource-list">${p.resources.map(r => `<a href="${r.url}" target="_blank" class="resource-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>${r.text}</a>`).join('')}</div>
       </div>`;
-    div.querySelector('.phase-head').addEventListener('click', () => {
-      const wasExpanded = div.classList.contains('expanded');
-      div.classList.toggle('expanded', !wasExpanded);
-    });
     list.appendChild(div);
   });
 }
