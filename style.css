@@ -2,16 +2,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-primary: #111111;
-  --bg-secondary: #191919;
-  --bg-card: #1e1e1e;
-  --bg-card-hover: #262626;
-  --bg-input: #222222;
-  --border: #333333;
-  --border-light: #2a2a2a;
-  --text-primary: #f0f0f0;
-  --text-secondary: #a0a0a0;
-  --text-muted: #6b6b6b;
+  --bg-primary: #050505;
+  --bg-secondary: #0c0c0c;
+  --bg-card: #111113;
+  --bg-card-hover: #1a1a1e;
+  --bg-input: #141416;
+  --border: #252528;
+  --border-light: #1c1c20;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #63636e;
   --accent: #4f9cf7;
   --accent-dim: rgba(79,156,247,0.12);
   --green: #34d399;
@@ -161,8 +161,7 @@ body {
 .content {
   flex: 1;
   margin-left: var(--sidebar-width);
-  padding: 28px 32px;
-  max-width: 900px;
+  padding: 28px 40px;
 }
 
 .tab-panel { display: none; animation: fadeIn 0.3s ease; }

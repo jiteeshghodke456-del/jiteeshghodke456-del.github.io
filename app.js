@@ -34,18 +34,34 @@ async function syncCF() {
     const subs = await cfFetch('user.status', { handle: STATE.cfHandle, count: 500 });
     STATE.cfSubmissions = subs.filter(s => s.verdict === 'OK').length;
     STATE.cfTotalSubs = subs.length;
-    // Count unique solved problems
+    
+    // Count unique solved problems and daily solves
     const solved = new Set();
-    subs.forEach(s => { if (s.verdict === 'OK') solved.add(`${s.problem.contestId}-${s.problem.index}`); });
-    STATE.cfSolved = solved.size;
-    // Daily solve counts from submissions
+    const dailySolved = {};
+    
     subs.forEach(s => {
       if (s.verdict === 'OK') {
+        const probId = `${s.problem.contestId}-${s.problem.index}`;
+        solved.add(probId);
+        
         const d = new Date(s.creationTimeSeconds * 1000).toISOString().slice(0,10);
-        if (!STATE.dailyLog[d]) STATE.dailyLog[d] = { solved: 0, contest: false };
-        // Don't overcount - just mark that day had activity
-        STATE.dailyLog[d].solved = Math.max(STATE.dailyLog[d].solved, 1);
+        if (!dailySolved[d]) dailySolved[d] = new Set();
+        dailySolved[d].add(probId);
       }
+    });
+    
+    STATE.cfSolved = solved.size;
+    
+    // Update dailyLog with fetched data
+    Object.keys(dailySolved).forEach(d => {
+      if (!STATE.dailyLog[d]) STATE.dailyLog[d] = { solved: 0, contest: false };
+      STATE.dailyLog[d].solved = Math.max(STATE.dailyLog[d].solved, dailySolved[d].size);
+    });
+    
+    // Mark contest days
+    STATE.contests.forEach(c => {
+      if (!STATE.dailyLog[c.date]) STATE.dailyLog[c.date] = { solved: 0, contest: false };
+      STATE.dailyLog[c.date].contest = true;
     });
 
     STATE.lastSync = new Date().toISOString();
