@@ -261,7 +261,7 @@ function renderHeatmap() {
     let cls = 'heatmap-day';
     if (key === todayKey) cls += ' today';
     if (d > today) cls += ' future';
-    else if (solved >= 3) cls += ' filled-3';
+    else if (solved >= 5) cls += ' filled-3';
     else if (solved >= 2) cls += ' filled-2';
     else if (solved >= 1) cls += ' filled-1';
     html += `<div class="${cls}" title="${key}: ${solved} solved"></div>`;
