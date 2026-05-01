@@ -110,17 +110,51 @@ function calcStreak() {
   STATE.longestStreak = Math.max(STATE.longestStreak, streak);
 }
 
+// ─── XP System ───────────────────────────────────────────
+// 10 XP per problem, 50 XP per contest, 5 XP per streak day bonus
+function calcXP() {
+  let xp = 0;
+  Object.values(STATE.dailyLog).forEach(log => {
+    xp += (log.solved || 0) * 10;
+    if (log.contest) xp += 50;
+  });
+  xp += STATE.currentStreak * 5; // streak bonus
+  xp += (STATE.contests?.length || 0) * 50;
+  return xp;
+}
+function getLevel(xp) {
+  // Each level needs progressively more XP: level N needs N*100 XP
+  let level = 1, needed = 100;
+  while (xp >= needed) { xp -= needed; level++; needed = level * 100; }
+  return { level, currentXP: xp, neededXP: needed };
+}
+const LEVEL_TITLES = ['Newbie','Learner','Solver','Thinker','Builder','Grinder','Strategist','Expert','Master','Legend'];
+function getLevelTitle(level) { return LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)]; }
+
+function showXPToast(amount, reason) {
+  const existing = document.querySelector('.xp-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'xp-toast';
+  toast.innerHTML = `+${amount} XP · ${reason}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
 // ─── Dashboard ───────────────────────────────────────────
 function renderDashboard() {
   calcStreak();
   const phase = PHASES[STATE.currentPhase];
   const progress = Math.min(100, Math.max(0, ((STATE.currentRating - 800) / 1200) * 100));
-  const daysActive = Object.keys(STATE.dailyLog).length;
+  const totalXP = calcXP();
+  const { level, currentXP, neededXP } = getLevel(totalXP);
+  const xpPct = Math.round((currentXP / neededXP) * 100);
+  const isStreakAlive = STATE.currentStreak > 0;
 
   let handleSection = '';
   if (!STATE.cfHandle) {
     handleSection = `<div class="card"><div class="card-title" style="margin-bottom:12px">Link Codeforces Account</div>
-      <div style="display:flex;gap:8px"><input id="cfHandleInput" placeholder="Your CF handle" style="flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font);font-size:13px;padding:8px 12px;outline:none">
+      <div style="display:flex;gap:8px"><input id="cfHandleInput" placeholder="Your CF handle" style="flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font);font-size:14px;padding:10px 14px;outline:none">
       <button class="btn btn-primary" onclick="linkCF()">Link</button></div></div>`;
   } else {
     handleSection = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
@@ -134,17 +168,41 @@ function renderDashboard() {
   $('#tab-dashboard').innerHTML = `
     <h1 class="page-title">Dashboard</h1>
     ${handleSection}
+
+    <div class="streak-display">
+      <div class="streak-fire${isStreakAlive ? '' : ' dead'}"><span class="fire-emoji">🔥</span></div>
+      <div class="streak-info">
+        <div class="streak-count">${STATE.currentStreak} day${STATE.currentStreak !== 1 ? 's' : ''}</div>
+        <div class="streak-label">${isStreakAlive ? 'Keep it going!' : 'Solve a problem to start your streak!'}</div>
+      </div>
+      <div class="streak-best">
+        <div class="streak-best-val">${STATE.longestStreak}</div>
+        <div class="streak-best-label">Best streak</div>
+      </div>
+    </div>
+
+    <div class="xp-display">
+      <div class="level-badge">${level}</div>
+      <div class="xp-info">
+        <div class="xp-top">
+          <span class="xp-level-text">Lvl ${level} · ${getLevelTitle(level)}</span>
+          <span class="xp-amount">${currentXP} / ${neededXP} XP</span>
+        </div>
+        <div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:${xpPct}%"></div></div>
+      </div>
+    </div>
+
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:13px;color:var(--text-muted)">800</span>
         <span style="font-size:13px;color:var(--text-muted)">2000</span>
       </div>
       <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
-      <div style="text-align:center;margin-top:8px;font-size:12px;color:var(--text-muted)">${Math.round(progress)}% complete · Phase ${STATE.currentPhase + 1}/5 — ${phase.title}</div>
+      <div style="text-align:center;margin-top:8px;font-size:13px;color:var(--text-muted)">${Math.round(progress)}% · Phase ${STATE.currentPhase + 1}/5 — ${phase.title}</div>
     </div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-value" style="color:var(--accent)">${STATE.currentRating}</div><div class="stat-label">Rating</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:var(--green)">${STATE.currentStreak}</div><div class="stat-label">Streak</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--green)">${totalXP}</div><div class="stat-label">Total XP</div></div>
       <div class="stat-card"><div class="stat-value" style="color:var(--blue)">${STATE.cfSolved || 0}</div><div class="stat-label">Solved</div></div>
       <div class="stat-card"><div class="stat-value" style="color:var(--amber)">${STATE.contests?.length || 0}</div><div class="stat-label">Contests</div></div>
     </div>
@@ -156,7 +214,7 @@ function renderDashboard() {
       <div class="heatmap" id="heatmap"></div>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-title" style="margin-bottom:10px">Current Phase: ${phase.label}</div>
+      <div class="card-title" style="margin-bottom:10px">Phase ${STATE.currentPhase + 1}: ${phase.label}</div>
       <div class="chip-wrap">${phase.coreTopics.map(t => `<span class="chip core">${t}</span>`).join('')}</div>
       <div style="margin-top:10px">
         <div class="practice-grid">
@@ -278,11 +336,14 @@ function renderTracker() {
 
 window.saveLog = function() {
   const todayKey = new Date().toISOString().slice(0,10);
-  STATE.dailyLog[todayKey] = {
-    solved: parseInt($('#logSolved').value) || 0,
-    contest: $('#logContest').value === '1'
-  };
+  const oldLog = STATE.dailyLog[todayKey] || { solved: 0, contest: false };
+  const newSolved = parseInt($('#logSolved').value) || 0;
+  const newContest = $('#logContest').value === '1';
+  const addedProblems = Math.max(0, newSolved - (oldLog.solved || 0));
+  STATE.dailyLog[todayKey] = { solved: newSolved, contest: newContest };
   saveState(STATE);
+  if (addedProblems > 0) showXPToast(addedProblems * 10, `${addedProblems} problem${addedProblems > 1 ? 's' : ''} solved`);
+  else if (newContest && !oldLog.contest) showXPToast(50, 'Contest logged');
   renderTracker();
   renderDashboard();
 };
